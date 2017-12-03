@@ -1,0 +1,27 @@
+WITH sub AS
+  (SELECT group_id,
+          LISTAGG(handle_name, ',') WITHIN
+   GROUP (
+          ORDER BY site_id) HANDLE
+   FROM
+     (SELECT DISTINCT grpstelink.group_id,
+                      site.site_id,
+                     handle_name
+      FROM PM_GROUP_SITE_LINK grpstelink
+      JOIN PM_SITE site ON site.site_id = grpstelink.site_id )
+   GROUP BY group_id )
+SELECT grp.group_name,
+       MAX(sub.handle) HANDLE,
+       MAX(grpfile.file_name) FILE_NAME,
+       MAX(
+             (SELECT usr.fname||' '||usr.lname
+              FROM PM_USER usr
+              WHERE usr.user_id = grpfile.FILE_CREATED_BY )) FILE_CREATED_BY,
+       MAX(
+             (SELECT usr.fname||' '||usr.lname
+              FROM PM_USER usr
+              WHERE usr.user_id = grpfile.FILE_UPDATED_BY )) FILE_UPDATED_BY
+FROM PM_GROUP grp
+JOIN sub ON sub.group_id = grp.group_id
+JOIN PM_GROUP_FILE grpfile ON grpfile.group_id = grp.group_id
+GROUP BY grp.group_name;
